@@ -1,0 +1,7 @@
+agentAddress udp:161,udp6:[::1]:161
+
+rocommunity public default  # -V systemonly
+
+rocommunity6 public default  # -V systemonly
+
+perl do "/tmp/A1/subagent" ;

@@ -1,0 +1,110 @@
+#!/usr/bin/perl -w
+use DBI;
+use NetSNMP::TrapReceiver;
+use Net::SNMP;
+
+my $dbfile="a4.db";
+  my $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile","","");
+
+  sub my_receiver {
+     
+      foreach my $x (@{$_[1]}) { 
+         # printf "  %-30s type=%-2d value=%s\n", $x->[0], $x->[2], $x->[1];
+      $t = time;
+      if("$x->[0]" eq ".1.3.6.1.4.1.41717.10.1"){
+      $device = $x->[1] ;
+}
+      if("$x->[0]" eq ".1.3.6.1.4.1.41717.10.2"){
+      $status=$x->[1];
+}
+
+      }
+  
+##############insert and update###############
+
+my $st = qq(SELECT * from list;);
+my $sth = $dbh->prepare($st);
+my $rv = $sth->execute() or die $DBI::errstr;
+
+while(my @row = $sth->fetchrow_array()){
+
+print "UPDATE: \n";
+ print "$device ------ $row[1]\n";
+if($device eq "\"$row[1]\""){
+my $stm = qq(UPDATE list set ostatus= $row[2] , ortime= $row[3], status=$status , reporttime=$t  where device = "$row[1]";);
+my $r = $dbh->do($stm) or die $DBI::errstr;
+#my $v = $r->execute() or die  $DBI::errstr;
+goto START;
+}
+
+}
+print "INSERT: \n";
+my $stmt = qq(INSERT INTO list(device,status,reporttime,ostatus,ortime)
+               VALUES ($device,$status,$t,$status,$t););
+my $s = $dbh->do($stmt) or die $DBI::errstr;
+
+START:
+
+#########Monitor############
+
+my @info = ();
+
+my $t = qq(SELECT * from list WHERE status = 3 ;);
+my $h = $dbh->prepare( $t );
+my $v = $h->execute() or die $DBI::errstr;
+
+while(my @row = $h->fetchrow_array()) {
+     
+if($row[2]>=$row[4]){
+push @info,'1.3.6.1.4.1.41717.20.1',OCTET_STRING,$row[1],'1.3.6.1.4.1.41717.20.2',UNSIGNED32,$row[3],'1.3.6.1.4.1.41717.20.3',INTEGER,$row[4],'1.3.6.1.4.1.41717.20.4',UNSIGNED32,$row[5];
+}
+}
+
+$j=0;
+$w = qq(SELECT * from list WHERE status = 2;);
+$x = $dbh->prepare($w);
+$y = $x->execute() or die $DBI::errstr;
+while(my @row1 = $x->fetchrow_array()) {
+      
+if($row1[2]>=$row1[4]){
+push @info,'1.3.6.1.4.1.41717.30.'.++$j,OCTET_STRING,$row1[1],'1.3.6.1.4.1.41717.30.'.++$j,UNSIGNED32,$row1[3],'1.3.6.1.4.1.41717.30.'.++$j,INTEGER,$row1[4],'1.3.6.1.4.1.41717.30.'.++$j,UNSIGNED32,$row1[5];
+}
+}
+
+
+###################################
+$n = qq(SELECT * from trapd;);
+$o = $dbh->prepare($n);
+$p = $o->execute() or die $DBI::errstr;
+while(my @row2 = $o->fetchrow_array()) {
+       $i = $row2[1];
+       $p =  $row2[2];
+       $c = $row2[3] ;
+  
+}
+
+($session, $error) = Net::SNMP->session(
+                           -hostname      =>  $i,
+                           -port          =>  $p,
+                           -community     =>  $c
+                                                 );
+
+if (!defined $session) {
+         printf "ERROR: Failed to create session for host '%s': %s.\n",
+                $session->hostname(), $session->error();
+      }
+
+$result = $session->trap(-varbindlist      => \@info,);
+
+ if (!defined $result) {
+         printf "ERROR: Failed to queue set request for host '%s': %s.\n",
+                $session->hostname(), $session->error();
+         
+      }
+
+}
+
+  NetSNMP::TrapReceiver::register("all", \&my_receiver) || 
+    warn "failed to register our perl trap handler\n";
+
+  print STDERR "Loaded the example perl snmptrapd handler\n";

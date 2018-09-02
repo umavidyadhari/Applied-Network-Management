@@ -1,0 +1,34 @@
+<?php
+ include 'config.php';
+$q =<<<EOF
+  SELECT count(*) as c FROM trapd ;
+EOF;
+$num = $db->query($q);
+   while($row1 = $num->fetchArray(SQLITE3_ASSOC) ) {
+
+$c =  $row1['c'];
+    }
+if($c ==0){
+echo "FALSE";
+}
+else{
+   $sql =<<<EOF
+      SELECT * from trapd;
+EOF;
+
+   $ret = $db->query($sql);
+   
+   while($row = $ret->fetchArray(SQLITE3_ASSOC) ) {
+       "id = ". $row['id'] . "\n";
+        "ip = ". $row['ip'] ."\n";
+        "port = ". $row['port'] ."\n";
+        "community = ".$row['community'] ."\n\n";
+
+       echo $row['community'] ."@".$row['ip'].":".$row['port'] ."\n";
+  }  
+
+   #echo "Operation done successfully\n";
+
+}
+   $db->close();
+?>

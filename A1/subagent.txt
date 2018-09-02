@@ -1,0 +1,42 @@
+#!/usr/bin/perl 
+
+use NetSNMP::agent (':all');
+use NetSNMP::ASN (':all');
+use NetSNMP::OID (':all');
+sub hello_handler {
+  my ($handler, $registration_info, $request_info, $requests) = @_;
+  my $request;
+  print "file reading ..";
+  for($request = $requests; $request; $request = $request->next()) {
+    my $oid = $request->getOID();
+    my @words = split ('\.',$oid);
+    my $a = $words[-1];
+    if ($request_info->getMode() == MODE_GET) {
+      if ($oid == new NetSNMP::OID("1.3.6.1.4.1.4171.40.1")) {
+        $request->setValue(ASN_COUNTER,time);
+
+      }
+      elsif ($oid > new NetSNMP::OID("1.3.6.1.4.1.4171.40.1")) {
+      print "file reading..";
+	 my $filename = 'counters.conf';
+    open(my $fh, '<:encoding(UTF-8)', $filename);
+     # or die "Could not open file '$filename' $!"; 
+    while (my $row = <$fh>) {
+
+        chomp $row;
+        my @new = split /,/ , $row ;
+        if($a == ($new[0]+1)){
+	$request->setValue(ASN_COUNTER, $new[1]*time);
+
+       }
+   }
+        
+      }
+    
+    }
+  }
+}
+
+my $agent = new NetSNMP::agent();
+$agent->register("subagent", "1.3.6.1.4.1.4171.40",
+                 \&hello_handler);

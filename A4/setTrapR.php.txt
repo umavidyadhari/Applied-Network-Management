@@ -1,0 +1,43 @@
+<?php
+include 'config.php';
+   if( $_GET["ip"] && $_GET["port"] && $_GET["community"] ) {
+       $i = $_GET['ip'];
+       $p = $_GET['port'];
+       $c= $_GET['community'];
+      echo "OK";
+$s =<<<EOF
+CREATE TABLE IF NOT EXISTS trapd(
+id INT AUTO_INCREMENT PRIMARY KEY ,
+ip VARCHAR(20) NOT NULL,
+port INT NOT NULL,
+community STRING 
+);
+
+EOF;
+$q1 = $db->exec($s);
+   if(!$q1) {
+      echo $db->lastErrorMsg();
+   } else { 
+      #echo "Table  created successfully\n";
+   }
+
+   $sql =<<<EOF
+      
+      INSERT INTO trapd (ip,port,community)
+      VALUES ("$i",$p,"$c");
+EOF;
+
+   $q = $db->exec($sql);
+   if(!$q) {
+      echo $db->lastErrorMsg();
+   } else {
+      #echo "Records created successfully\n";
+   }
+   $db->close();
+   }
+
+    else{
+     echo "FALSE" ;
+ }
+?>
+

@@ -1,0 +1,48 @@
+<?php 
+include 'config.php';
+
+$s = <<<EOF
+CREATE TABLE IF NOT EXISTS list(
+sno INT AUTO_INCREMENT PRIMARY KEY,
+device STRING ,
+status integer,
+reporttime varchar,
+ostatus integer,
+ortime varchar
+);
+
+EOF;
+$q1 = $db->query($s);
+   if(!$q1){
+      echo $db->lastErrorMsg();
+   } else {
+      #echo "Table created successfully\n";
+   }
+ 
+$q =<<<EOF
+  SELECT count(*) as c FROM list ;
+EOF;
+$n = $db->query($q);
+   while($row1 = $n->fetchArray(SQLITE3_ASSOC) ) {
+
+$c =  $row1['c'];
+    }
+if($c ==0){
+echo "FALSE\n";
+}
+else{
+   $sql =<<<EOF
+      SELECT * from list;
+EOF;
+
+   $ret = $db->query($sql);
+   
+   while($row = $ret->fetchArray(SQLITE3_ASSOC) ) {
+      
+       echo $row['device']." | ".$row['status']." | ".$row['reporttime']." | ".$row['ostatus']." | ".$row['ortime']." \n";
+  }  
+
+  
+}
+   $db->close();
+?>
